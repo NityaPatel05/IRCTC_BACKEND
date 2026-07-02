@@ -80,6 +80,7 @@ class CircuitBreaker {
 const circuitBreakers = {
   userService: new CircuitBreaker("user-service"),
   notificationService: new CircuitBreaker("notification-service"),
+  adminService: new CircuitBreaker("admin-service"),
 };
 
 /**
