@@ -1,4 +1,5 @@
-require("dotenv").config();
+const path = require("path");
+require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
 const emailConsumer = require("./kafka/consumer/email.consumer");
 const logger = require("./config/logger");
 async function startNotificationService() {

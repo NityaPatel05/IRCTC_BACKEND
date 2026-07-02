@@ -2,11 +2,13 @@ const { PrismaClient } = require("@prisma/client");
 const { PrismaPg } = require("@prisma/adapter-pg");
 const { config } = require("./");
 const connectionString = config.DATABASE_URL;
+const { Pool } = require("pg");
 
 const globalForPrisma = global;
 
 if (!globalForPrisma.prisma) {
-  const adapter = new PrismaPg({ connectionString });
+  const pool = new Pool({ connectionString });
+  const adapter = new PrismaPg(pool);
 
   globalForPrisma.prisma = new PrismaClient({
     adapter,

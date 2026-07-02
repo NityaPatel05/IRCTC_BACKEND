@@ -3,6 +3,8 @@ const asyncHandler = require("../utils/asyncHandler");
 const { config } = require("../config");
 const authService = require("../services/auth.service");
 const getDeviceFingerprint = require("../utils/deviceFingerprint.js");
+const jwt = require("jsonwebtoken");
+const { redis } = require("../config/redis");
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -138,5 +140,28 @@ exports.verifyGoogleIdToken = asyncHandler(async (req, res) => {
       success: true,
       message: "Logged in successfully",
       loggedInUser,
+    });
+});
+
+exports.logout = asyncHandler(async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+  if (refreshToken) {
+    try {
+      const payload = jwt.decode(refreshToken);
+      if (payload && payload.id) {
+        const deviceId = getDeviceFingerprint(req);
+        await redis.del(`refresh:${payload.id}:${deviceId}`);
+      }
+    } catch (error) {
+      // ignore token decode errors on logout
+    }
+  }
+  res
+    .clearCookie("accessToken")
+    .clearCookie("refreshToken")
+    .status(200)
+    .json({
+      success: true,
+      message: "Logged out successfully",
     });
 });

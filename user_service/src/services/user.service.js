@@ -2,6 +2,7 @@ const { config } = require("../config");
 const { redis } = require("../config/redis");
 const prisma = require("../config/prisma");
 const logger = require("../config/logger");
+const { NotFoundError } = require("../utils/error");
 
 const getProfile = async (userId) => {
   logger.info("First check user in Redis");
@@ -17,6 +18,10 @@ const getProfile = async (userId) => {
       id: userId,
     },
   });
+
+  if (!userProfile) {
+    throw new NotFoundError("User not found");
+  }
 
   logger.info("Exclude password field from the user");
   const { password: _password, ...safeUser } = userProfile;
@@ -47,12 +52,15 @@ const updateProfile = async (userId, data) => {
   return safeUser;
 };
 
-const deleteProfile = async (userId) => {
+const deleteProfile = async (userId, deviceId) => {
   logger.info(`Deleting user profile for user: ${userId}`);
   await prisma.user.delete({
     where: { id: userId },
   });
   await redis.del(`user:${userId}`);
+  if (deviceId) {
+    await redis.del(`refresh:${userId}:${deviceId}`);
+  }
 };
 
 module.exports = { getProfile, updateProfile, deleteProfile };

@@ -2,6 +2,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const { BadRequestError, NotFoundError } = require("../utils/error");
 const userService = require("../services/user.service");
 const logger = require("../config/logger");
+const getDeviceFingerprint = require("../utils/deviceFingerprint");
 
 exports.getProfile = asyncHandler(async (req, res) => {
   const userId = req.user.id;
@@ -25,7 +26,8 @@ exports.updateProfile = asyncHandler(async (req, res) => {
     throw new BadRequestError("User Id is missing");
   }
 
-  const updatedUser = await userService.updateProfile(userId, req.body);
+  const { firstName, lastName } = req.body;
+  const updatedUser = await userService.updateProfile(userId, { firstName, lastName });
   return res.status(200).json({
     success: true,
     message: "User profile updated successfully",
@@ -37,15 +39,20 @@ exports.updateProfile = asyncHandler(async (req, res) => {
 
 exports.deleteProfile = asyncHandler(async (req, res) => {
   const userId = req.user.id;
+  const deviceId = getDeviceFingerprint(req);
   if (!userId) {
     throw new BadRequestError("User Id is missing");
   }
 
-  await userService.deleteProfile(userId);
-  return res.status(200).json({
-    success: true,
-    message: "User profile deleted successfully",
-  });
+  await userService.deleteProfile(userId, deviceId);
+  return res
+    .clearCookie("accessToken")
+    .clearCookie("refreshToken")
+    .status(200)
+    .json({
+      success: true,
+      message: "User profile deleted successfully",
+    });
 });
 
 exports.getUserInternal = asyncHandler(async (req, res) => {

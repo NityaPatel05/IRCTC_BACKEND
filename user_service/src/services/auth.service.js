@@ -53,7 +53,8 @@ const verifyOTP = async (otp, otpSessionId) => {
 
   await notificationProducer.sendWelcomeEmail(meta.email, meta.firstName);
   logger.info(`Welcome email queued for ${meta.email}`);
-  return user;
+  const { password: _password, ...safeUser } = user;
+  return safeUser;
 };
 
 const login = async (email, password, deviceId) => {
@@ -125,10 +126,15 @@ const rotateRefreshToken = async (refreshToken, deviceId) => {
 };
 
 const verifyGoogleIdToken = async (idToken, deviceId) => {
-  const ticket = await client.verifyIdToken({
-    idToken,
-    audience: config.GOOGLE_CLIENT_ID,
-  });
+  let ticket;
+  try {
+    ticket = await client.verifyIdToken({
+      idToken,
+      audience: config.GOOGLE_CLIENT_ID,
+    });
+  } catch (error) {
+    throw new UnauthorizedError("Invalid or expired Google ID Token", "INVALID_GOOGLE_TOKEN");
+  }
   const payload = ticket.getPayload();
 
   if (!payload.sub || !payload.email) {

@@ -26,6 +26,7 @@ class EmailService {
           to: msg.to,
           error: error.message,
           code: error.code,
+          details: error.response?.body
         },
       );
 
